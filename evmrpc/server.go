@@ -53,7 +53,7 @@ func NewEVMHTTPServer(
 	ctx := ctxProvider(LatestCtxHeight)
 
 	txAPI := NewTransactionAPI(tmClient, k, ctxProvider, txConfig, homeDir, ConnectionTypeHTTP)
-	debugAPI := NewDebugAPI(tmClient, k, ctxProvider, txConfig, simulateConfig, app, antehandler, ConnectionTypeHTTP, config)
+	debugAPI := NewDebugAPI(tmClient, k, ctxProvider, txConfig, simulateConfig, app, antehandler, ConnectionTypeHTTP, config, app.TracingInfo)
 	if isPanicOrSyntheticTxFunc == nil {
 		isPanicOrSyntheticTxFunc = func(ctx context.Context, hash common.Hash) (bool, error) {
 			return debugAPI.isPanicOrSyntheticTx(ctx, hash)

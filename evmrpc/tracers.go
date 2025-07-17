@@ -70,6 +70,7 @@ func NewDebugAPI(
 	antehandler sdk.AnteHandler,
 	connectionType ConnectionType,
 	debugCfg Config,
+	tracingInfo *tracing.Info,
 ) *DebugAPI {
 	backend := NewBackend(ctxProvider, k, txConfig, tmClient, config, app, antehandler)
 	tracersAPI := tracers.NewAPI(backend)
@@ -93,6 +94,7 @@ func NewDebugAPI(
 		traceCallSemaphore: sem,
 		maxBlockLookback:   debugCfg.MaxTraceLookbackBlocks,
 		traceTimeout:       debugCfg.TraceTimeout,
+		TracingInfo:        tracingInfo,
 	}
 }
 
