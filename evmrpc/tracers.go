@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/utils/tracing"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"     // run init()s to register JS tracers
@@ -21,6 +22,7 @@ import (
 	"github.com/sei-protocol/sei-chain/x/evm/keeper"
 	"github.com/sei-protocol/sei-chain/x/evm/state"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -40,6 +42,7 @@ type DebugAPI struct {
 	traceCallSemaphore chan struct{} // Semaphore for limiting concurrent trace calls
 	maxBlockLookback   int64
 	traceTimeout       time.Duration
+	TracingInfo        *tracing.Info
 }
 
 // acquireTraceSemaphore attempts to acquire a slot from the traceCallSemaphore.
@@ -259,8 +262,12 @@ func (api *DebugAPI) isPanicOrSyntheticTx(ctx context.Context, hash common.Hash)
 }
 
 func (api *DebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, config *tracers.TraceConfig) (result interface{}, returnErr error) {
-	release := api.acquireTraceSemaphore()
-	defer release()
+	// release := api.acquireTraceSemaphore()
+	// defer release()
+	spanCtx, span := api.TracingInfo.StartWithContext("TraceBlockByNumber", ctx)
+	span.SetAttributes(attribute.KeyValue{Key: "number", Value: attribute.Int64Value(number.Int64())})
+	defer span.End()
+	ctx = spanCtx
 
 	ctx, cancel := context.WithTimeout(ctx, api.traceTimeout)
 	defer cancel()
