@@ -455,7 +455,9 @@ func (b *Backend) initializeBlock(ctx context.Context, block *ethtypes.Block) (s
 	reqBeginBlock := tmBlock.Block.ToReqBeginBlock(res.Validators)
 	reqBeginBlock.Simulate = true
 	sdkCtx := b.ctxProvider(prevBlockHeight).WithBlockHeight(blockNumber).WithBlockTime(tmBlock.Block.Time)
+	_, span := b.app.TracingInfo.StartWithContext("BeginBlock", ctx)
 	_ = b.app.BeginBlock(sdkCtx, reqBeginBlock)
+	span.End()
 	sdkCtx = sdkCtx.WithNextMs(
 		b.ctxProvider(sdkCtx.BlockHeight()).MultiStore(),
 		[]string{"oracle", "oracle_mem"},
@@ -541,7 +543,7 @@ func (b *Backend) GetCustomPrecompiles(h int64) map[common.Address]vm.Precompile
 func (b *Backend) PrepareTx(statedb vm.StateDB, tx *ethtypes.Transaction) error {
 	typedStateDB := state.GetDBImpl(statedb)
 	typedStateDB.CleanupForTracer()
-	spanCtx, span := b.app.TracingInfo.StartWithContext("StateAtBlock", typedStateDB.Ctx().Context())
+	spanCtx, span := b.app.TracingInfo.StartWithContext("PrepareTx", typedStateDB.Ctx().Context())
 	defer span.End()
 	ctx, _ := b.keeper.PrepareCtxForEVMTransaction(typedStateDB.Ctx(), tx)
 	ctx = ctx.WithIsEVM(true)
