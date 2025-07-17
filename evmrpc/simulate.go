@@ -460,6 +460,7 @@ func (b *Backend) initializeBlock(ctx context.Context, block *ethtypes.Block) (s
 		b.ctxProvider(sdkCtx.BlockHeight()).MultiStore(),
 		[]string{"oracle", "oracle_mem"},
 	)
+	sdkCtx = sdkCtx.WithContext(ctx)
 	return sdkCtx, tmBlock, nil
 }
 
@@ -540,6 +541,8 @@ func (b *Backend) GetCustomPrecompiles(h int64) map[common.Address]vm.Precompile
 func (b *Backend) PrepareTx(statedb vm.StateDB, tx *ethtypes.Transaction) error {
 	typedStateDB := state.GetDBImpl(statedb)
 	typedStateDB.CleanupForTracer()
+	spanCtx, span := b.app.TracingInfo.StartWithContext("StateAtBlock", typedStateDB.Ctx().Context())
+	defer span.End()
 	ctx, _ := b.keeper.PrepareCtxForEVMTransaction(typedStateDB.Ctx(), tx)
 	ctx = ctx.WithIsEVM(true)
 	if noSignatureSet(tx) {
@@ -560,6 +563,7 @@ func (b *Backend) PrepareTx(statedb vm.StateDB, tx *ethtypes.Transaction) error 
 	if err != nil {
 		return fmt.Errorf("transaction failed ante handler due to %s", err)
 	}
+	newCtx = newCtx.WithContext(spanCtx)
 	typedStateDB.WithCtx(newCtx)
 	return nil
 }
