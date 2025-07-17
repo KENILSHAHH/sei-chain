@@ -203,6 +203,9 @@ func NewBackend(ctxProvider func(int64) sdk.Context, keeper *keeper.Keeper, txCo
 }
 
 func (b *Backend) StateAndHeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (vm.StateDB, *ethtypes.Header, error) {
+	spanCtx, span := b.app.TracingInfo.StartWithContext("StateAndHeaderByNumberOrHash", ctx)
+	defer span.End()
+	ctx = spanCtx
 	height, err := b.getBlockHeight(ctx, blockNrOrHash)
 	if err != nil {
 		return nil, nil, err
@@ -257,6 +260,9 @@ func (b Backend) ConvertBlockNumber(bn rpc.BlockNumber) int64 {
 }
 
 func (b Backend) BlockByNumber(ctx context.Context, bn rpc.BlockNumber) (*ethtypes.Block, []tracersutils.TraceBlockMetadata, error) {
+	spanCtx, span := b.app.TracingInfo.StartWithContext("BlockByNumber", ctx)
+	defer span.End()
+	ctx = spanCtx
 	blockNum := b.ConvertBlockNumber(bn)
 	tmBlock, err := blockByNumber(ctx, b.tmClient, &blockNum)
 	if err != nil {
@@ -419,6 +425,9 @@ func (b *Backend) ReplayTransactionTillIndex(ctx context.Context, block *ethtype
 }
 
 func (b *Backend) StateAtBlock(ctx context.Context, block *ethtypes.Block, reexec uint64, base vm.StateDB, readOnly bool, preferDisk bool) (vm.StateDB, tracers.StateReleaseFunc, error) {
+	spanCtx, span := b.app.TracingInfo.StartWithContext("StateAtBlock", ctx)
+	defer span.End()
+	ctx = spanCtx
 	emptyRelease := func() {}
 	sdkCtx, _, err := b.initializeBlock(ctx, block)
 	if err != nil {
